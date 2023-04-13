@@ -1,27 +1,29 @@
-package aidetect
+package spellcheck
 
 import (
 	"bytes"
 	"encoding/json"
 	"net/http"
 	"time"
+
+	uuid "github.com/satori/go.uuid"
 )
 
-const URL = "https://api.sapling.ai/api/v1/aidetect"
+const URL = "https://api.sapling.ai/api/v1/spellcheck"
 
-type aiDetect struct {
+type spellcheck struct {
 	URL    string
 	Key    string
 	client *http.Client
 }
 
-func (s aiDetect) Get(text string, scores bool) (Response, error) {
+func (s spellcheck) Get(text string) (Response, error) {
 	var (
 		responseParams Response
 		params         = RequestParams{
-			Key:        s.Key,
-			Text:       text,
-			SentScores: scores,
+			Key:       s.Key,
+			Text:      text,
+			SessionID: uuid.NewV4().String(),
 		}
 	)
 
@@ -49,8 +51,8 @@ func (s aiDetect) Get(text string, scores bool) (Response, error) {
 	return responseParams, nil
 }
 
-func NewClientV1(op Options) AIDetect {
-	return aiDetect{
+func NewClientV1(op Options) SpellCheck {
+	return spellcheck{
 		URL: URL,
 		Key: op.Key,
 		client: &http.Client{
@@ -64,22 +66,29 @@ type Options struct {
 	Timeout time.Duration
 }
 
-type AIDetect interface {
-	Get(string, bool) (Response, error)
+type SpellCheck interface {
+	Get(string) (Response, error)
 }
 
-type SentenceScore struct {
-	Sentence string  `json:"sentence"`
-	Score    float64 `json:"score"`
+type Edit struct {
+	SentenceStart int    `json:"sentence_start"`
+	Start         int    `json:"start"`
+	End           int    `json:"end"`
+	ID            string `json:"id"`
+	Replacement   string `json:"replacement"`
+	Sentence      string `json:"sentence"`
 }
 
 type Response struct {
-	Score          float64         `json:"score"`
-	SentenceScores []SentenceScore `json:"sentence_scores"`
+	Edits []Edit `json:"edits"`
 }
 
 type RequestParams struct {
-	Key        string `json:"key"`
-	Text       string `json:"text"`
-	SentScores bool   `json:"sent_scores"`
+	Key       string `json:"key"`
+	Text      string `json:"text"`
+	SessionID string `json:"session_id"`
+
+	MinLength     int    `json:"min_length"`
+	MultipleEdits bool   `json:"multiple_edits"`
+	Lang          string `json:"lang"`
 }

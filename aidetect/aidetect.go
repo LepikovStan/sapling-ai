@@ -76,6 +76,9 @@ type SentenceScore struct {
 type Response struct {
 	Score          float64         `json:"score"`
 	SentenceScores []SentenceScore `json:"sentence_scores"`
+	Truncated      bool            `json:"truncated"`
+	UsedTokens     int             `json:"used_tokens"`
+	Hash           string          `json:"hash"`
 }
 
 type RequestParams struct {
